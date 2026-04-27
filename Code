@@ -1,0 +1,49 @@
+import pandas as pd
+import numpy as np
+from scipy import stats
+import matplotlib.pyplot as plt
+import seaborn as sns
+
+# 1. Simulate Data for A/B Test
+# Group A: Original Design | Group B: New Design (with bigger 'Apply' button)
+np.random.seed(42)
+n_users = 1000 
+
+# Control Group (A): 12% conversion rate, 45% bounce rate
+control_conv = np.random.binomial(1, 0.12, n_users)
+control_bounce = np.random.binomial(1, 0.45, n_users)
+
+# Variation Group (B): 15% conversion rate, 38% bounce rate
+variation_conv = np.random.binomial(1, 0.15, n_users)
+variation_bounce = np.random.binomial(1, 0.38, n_users)
+
+# Create DataFrame
+df_a = pd.DataFrame({'group': 'A', 'converted': control_conv, 'bounced': control_bounce})
+df_b = pd.DataFrame({'group': 'B', 'converted': variation_conv, 'bounced': variation_bounce})
+df = pd.concat([df_a, df_b])
+
+# 2. Calculate Metrics
+metrics = df.groupby('group').agg({
+    'converted': 'mean',
+    'bounced': 'mean'
+})
+print("--- A/B Test Metrics ---")
+print(metrics)
+
+# 3. Statistical Significance (T-Test)
+# We check if the difference in conversion is real or just luck
+t_stat, p_val = stats.ttest_ind(df_a['converted'], df_b['converted'])
+
+print(f"\nP-Value: {p_val:.4f}")
+
+if p_val < 0.05:
+    print("✅ RESULT: Statistically Significant. The New Design (B) is the winner!")
+else:
+    print("❌ RESULT: Not Significant. Keep the original design.")
+
+# 4. Visualization
+plt.figure(figsize=(10, 5))
+sns.barplot(x='group', y='converted', data=df, palette='viridis')
+plt.title('Conversion Rate: Original (A) vs. New Design (B)')
+plt.ylabel('Conversion Probability')
+plt.show()
